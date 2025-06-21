@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NK跑酷 - 躲避大便大冒险</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Press Start 2P', cursive, Arial, sans-serif;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1f25, #2c3e50);
+            overflow: hidden;
+            color: #fff;
+        }
+        
+        .game-container {
+            position: relative;
+            width: 800px;
+            height: 400px;
+            background: #0f1c2e;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+        
+        .game-header {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 30px;
+            z-index: 10;
+        }
+        
+        .score-container, .high-score-container {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 2px solid #ffcc00;
+            text-align: center;
+        }
+        
+        .score-title, .high-score-title {
+            font-size: 14px;
+            color: #ffcc00;
+            margin-bottom: 5px;
+            text-shadow: 0 0 5px rgba(255, 204, 0, 0.5);
+        }
+        
+        .score, .high-score {
+            font-size: 24px;
+            color: #fff;
+        }
+        
+        .ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 30px;
+            background: linear-gradient(to bottom, #8B4513, #654321);
+            z-index: 2;
+        }
+        
+        .game-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+        }
+        
+        .game-title {
+            font-size: 48px;
+            color: #ffcc00;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.8);
+            margin-bottom: 30px;
+            letter-spacing: 3px;
+            text-align: center;
+        }
+        
+        .start-button {
+            background: linear-gradient(to bottom, #ffcc00, #ff9900);
+            color: #8B0000;
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+        }
+        
+        .start-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .start-button:active {
+            transform: translateY(1px);
+        }
+        
+        .instructions {
+            margin-top: 30px;
+            text-align: center;
+            color: #ccc;
+            font-size: 14px;
+            line-height: 1.6;
+            max-width: 80%;
+        }
+        
+        .character {
+            position: absolute;
+            bottom: 30px;
+            left: 100px;
+            width: 50px;
+            height: 70px;
+            z-index: 5;
+        }
+        
+        .obstacle {
+            position: absolute;
+            bottom: 30px;
+            right: 0;
+            width: 40px;
+            height: 40px;
+            z-index: 4;
+        }
+        
+        .game-over {
+            font-size: 60px;
+            color: #ff3333;
+            text-shadow: 0 0 10px rgba(255, 51, 51, 0.7);
+            margin-bottom: 30px;
+            display: none;
+        }
+        
+        .cloud {
+            position: absolute;
+            top: 80px;
+            width: 100px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            z-index: 1;
+        }
+        
+        .cloud:nth-child(2) {
+            top: 150px;
+            width: 70px;
+            height: 30px;
+        }
+        
+        .cloud:nth-child(3) {
+            top: 200px;
+            width: 120px;
+            height: 45px;
+        }
+        
+        .stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+        
+        .star {
+            position: absolute;
+            background: #fff;
+            border-radius: 50%;
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: #aaa;
+            font-size: 12px;
+            z-index: 10;
+        }
+        
+        .jump-indicator {
+            position: absolute;
+            bottom: 100px;
+            left: 150px;
+            color: #ffcc00;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="game-container">
+        <div class="stars"></div>
+        <div class="cloud"></div>
+        <div class="cloud"></div>
+        <div class="cloud"></div>
+        
+        <div class="game-header">
+            <div class="score-container">
+                <div class="score-title">当前分数</div>
+                <div class="score">0</div>
+            </div>
+            <div class="high-score-container">
+                <div class="high-score-title">最高分</div>
+                <div class="high-score">0</div>
+            </div>
+        </div>
+        
+        <div class="ground"></div>
+        
+        <div class="character" id="nk">
+            <!-- NK角色将由JavaScript绘制 -->
+        </div>
+        
+        <div class="jump-indicator" id="jumpIndicator">跳跃!</div>
+        
+        <div class="game-overlay" id="gameOverlay">
+            <h1 class="game-title">NK跑酷大冒险</h1>
+            <button class="start-button" id="startButton">开始游戏</button>
+            <div class="instructions">
+                <p>使用空格键跳跃，避开大便障碍物</p>
+                <p>坚持时间越长，得分越高！</p>
+                <p>游戏速度会随着时间逐渐加快</p>
+            </div>
+        </div>
+        
+        <div class="controls">
+            按空格键跳跃 - 游戏速度会随时间增加
+        </div>
+    </div>
+    
+    <audio id="backgroundMusic" loop>
+        <source src="background.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="jumpSound">
+        <source src="data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" type="audio/mpeg">
+    </audio>
+    <audio id="collisionSound">
+        <source src="data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" type="audio/mpeg">
+    </audio>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 游戏元素
+            const gameContainer = document.querySelector('.game-container');
+            const gameOverlay = document.getElementById('gameOverlay');
+            const startButton = document.getElementById('startButton');
+            const scoreDisplay = document.querySelector('.score');
+            const highScoreDisplay = document.querySelector('.high-score');
+            const gameOverText = document.createElement('div');
+            gameOverText.className = 'game-over';
+            gameOverText.textContent = '游戏结束!';
+            gameOverlay.appendChild(gameOverText);
+            
+            // 音频元素
+            const backgroundMusic = document.getElementById('backgroundMusic');
+            const jumpSound = document.getElementById('jumpSound');
+            const collisionSound = document.getElementById('collisionSound');
+            
+            // 游戏变量
+            let gameStarted = false;
+            let score = 0;
+            let highScore = localStorage.getItem('nkHighScore') || 0;
+            let gameSpeed = 8;
+            let isJumping = false;
+            let jumpVelocity = 0;
+            let gravity = 0.6;
+            let gameLoop;
+            let obstacleInterval;
+            
+            // 更新最高分显示
+            highScoreDisplay.textContent = highScore;
+            
+            // 创建星星背景
+            function createStars() {
+                const starsContainer = document.querySelector('.stars');
+                for (let i = 0; i < 100; i++) {
+                    const star = document.createElement('div');
+                    star.className = 'star';
+                    star.style.left = `${Math.random() * 100}%`;
+                    star.style.top = `${Math.random() * 100}%`;
+                    star.style.width = `${Math.random() * 3}px`;
+                    star.style.height = star.style.width;
+                    star.style.opacity = Math.random();
+                    starsContainer.appendChild(star);
+                }
+            }
+            
+            // 创建NK角色
+            function createNK() {
+                const nk = document.getElementById('nk');
+                nk.innerHTML = '';
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = 50;
+                canvas.height = 70;
+                const ctx = canvas.getContext('2d');
+                
+                // 绘制NK角色
+                ctx.fillStyle = '#1E90FF';
+                ctx.beginPath();
+                ctx.arc(25, 20, 15, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 身体
+                ctx.fillRect(15, 35, 20, 30);
+                
+                // 眼睛
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(20, 18, 4, 0, Math.PI * 2);
+                ctx.arc(30, 18, 4, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = 'black';
+                ctx.beginPath();
+                ctx.arc(20, 18, 2, 0, Math.PI * 2);
+                ctx.arc(30, 18, 2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 嘴巴
+                ctx.strokeStyle = 'black';
+                ctx.beginPath();
+                ctx.arc(25, 25, 6, 0.2, Math.PI - 0.2);
+                ctx.stroke();
+                
+                // 腿
+                ctx.fillStyle = '#1E90FF';
+                ctx.fillRect(15, 65, 7, 10);
+                ctx.fillRect(28, 65, 7, 10);
+                
+                nk.appendChild(canvas);
+            }
+            
+            // 创建障碍物（大便）
+            function createObstacle() {
+                const obstacle = document.createElement('div');
+                obstacle.className = 'obstacle';
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = 40;
+                canvas.height = 40;
+                const ctx = canvas.getContext('2d');
+                
+                // 绘制大便
+                ctx.fillStyle = '#8B4513';
+                ctx.beginPath();
+                ctx.ellipse(20, 15, 15, 10, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.ellipse(20, 25, 12, 15, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 便便顶部细节
+                ctx.fillStyle = '#A0522D';
+                ctx.beginPath();
+                ctx.arc(20, 8, 5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                obstacle.appendChild(canvas);
+                obstacle.style.right = '-50px';
+                gameContainer.appendChild(obstacle);
+                
+                return obstacle;
+            }
+            
+            // 跳跃函数
+            function jump() {
+                if (!isJumping) {
+                    isJumping = true;
+                    jumpVelocity = -14;
+                    jumpSound.currentTime = 0;
+                    jumpSound.play();
+                    
+                    // 显示跳跃指示器
+                    const jumpIndicator = document.getElementById('jumpIndicator');
+                    jumpIndicator.style.opacity = '1';
+                    setTimeout(() => {
+                        jumpIndicator.style.opacity = '0';
+                    }, 500);
+                }
+            }
+            
+            // 游戏主循环
+            function updateGame() {
+                // 更新分数
+                score++;
+                scoreDisplay.textContent = score;
+                
+                // 逐渐增加游戏速度
+                if (score % 500 === 0) {
+                    gameSpeed += 0.5;
+                }
+                
+                // 更新NK的跳跃
+                const nk = document.getElementById('nk');
+                const currentBottom = parseFloat(nk.style.bottom || '30px');
+                
+                if (isJumping) {
+                    jumpVelocity += gravity;
+                    const newBottom = currentBottom + jumpVelocity;
+                    
+                    if (newBottom <= 30) {
+                        nk.style.bottom = `${newBottom}px`;
+                    } else {
+                        nk.style.bottom = '30px';
+                        isJumping = false;
+                        jumpVelocity = 0;
+                    }
+                }
+                
+                // 移动障碍物
+                const obstacles = document.querySelectorAll('.obstacle');
+                obstacles.forEach(obstacle => {
+                    const currentRight = parseFloat(obstacle.style.right);
+                    obstacle.style.right = `${currentRight + gameSpeed}px`;
+                    
+                    // 移除屏幕外的障碍物
+                    if (currentRight > 900) {
+                        obstacle.remove();
+                    }
+                    
+                    // 碰撞检测
+                    if (currentRight > 80 && currentRight < 140) {
+                        const nkRect = nk.getBoundingClientRect();
+                        const obstacleRect = obstacle.getBoundingClientRect();
+                        
+                        if (
+                            nkRect.left < obstacleRect.right &&
+                            nkRect.right > obstacleRect.left &&
+                            nkRect.top < obstacleRect.bottom &&
+                            nkRect.bottom > obstacleRect.top
+                        ) {
+                            endGame();
+                        }
+                    }
+                });
+            }
+            
+            // 生成障碍物
+            function generateObstacle() {
+                if (!gameStarted) return;
+                
+                const obstacle = createObstacle();
+                const obstacleHeight = 40;
+                obstacle.style.bottom = `${30}px`;
+                
+                // 随机间隔后生成下一个障碍物
+                const interval = Math.max(1000, 2000 - (score / 10));
+                setTimeout(generateObstacle, interval);
+            }
+            
+            // 结束游戏
+            function endGame() {
+                gameStarted = false;
+                clearInterval(gameLoop);
+                clearTimeout(obstacleInterval);
+                
+                collisionSound.play();
+                backgroundMusic.pause();
+                
+                // 更新最高分
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('nkHighScore', highScore);
+                    highScoreDisplay.textContent = highScore;
+                }
+                
+                // 移除所有障碍物
+                document.querySelectorAll('.obstacle').forEach(obs => obs.remove());
+                
+                // 显示游戏结束界面
+                gameOverText.style.display = 'block';
+                startButton.textContent = '重新开始';
+                gameOverlay.style.display = 'flex';
+            }
+            
+            // 开始游戏
+            function startGame() {
+                if (gameStarted) return;
+                
+                gameStarted = true;
+                score = 0;
+                gameSpeed = 8;
+                scoreDisplay.textContent = score;
+                
+                // 重置NK位置
+                const nk = document.getElementById('nk');
+                nk.style.bottom = '30px';
+                
+                // 隐藏开始界面
+                gameOverlay.style.display = 'none';
+                gameOverText.style.display = 'none';
+                
+                // 开始游戏循环
+                gameLoop = setInterval(updateGame, 1000/60);
+                
+                // 开始生成障碍物
+                generateObstacle();
+                
+                // 播放背景音乐
+                backgroundMusic.currentTime = 0;
+                backgroundMusic.play().catch(e => {
+                    console.log("音频自动播放被阻止，需要用户交互");
+                });
+            }
+            
+            // 事件监听
+            startButton.addEventListener('click', startGame);
+            
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') {
+                    if (gameStarted) {
+                        jump();
+                    } else if (!gameStarted && gameOverlay.style.display === 'flex') {
+                        startGame();
+                    }
+                }
+            });
+            
+            // 触摸设备支持
+            gameContainer.addEventListener('touchstart', () => {
+                if (gameStarted) {
+                    jump();
+                } else if (!gameStarted && gameOverlay.style.display === 'flex') {
+                    startGame();
+                }
+            });
+            
+            // 初始化游戏
+            createStars();
+            createNK();
+        });
+    </script>
+</body>
+</html>
